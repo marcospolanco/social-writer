@@ -4,15 +4,16 @@ import FeedbackPanel from './components/FeedbackPanel';
 import ApiKeyModal from './components/ApiKeyModal';
 import BrandPositioningModal from './components/BrandPositioningModal';
 import { PostFeedback } from './types/feedback';
-import { analyzePostWithGemini } from './services/geminiApi';
+import { analyzePostWithGemini, improvePostWithGemini } from './services/geminiApi';
 import { useDebounce } from './hooks/useDebounce';
-import { PenTool, Settings, Sparkles, FileText } from 'lucide-react';
+import { PenTool, Settings, Sparkles, FileText, Zap } from 'lucide-react';
 
 function App() {
   const [editorValue, setEditorValue] = useState('');
   const [previousText, setPreviousText] = useState('');
   const [feedback, setFeedback] = useState<PostFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -81,8 +82,36 @@ function App() {
     }
   }, [editorValue, previousText]);
 
+  const handleAutoImprove = useCallback(async () => {
+    if (!apiKey || !feedback || !editorValue.trim()) {
+      return;
+    }
+
+    setIsImproving(true);
+    setError(null);
+    
+    try {
+      const improvedText = await improvePostWithGemini(
+        editorValue, 
+        feedback, 
+        apiKey, 
+        brandPositioning || undefined
+      );
+      
+      setEditorValue(improvedText);
+      setPreviousText(''); // Force re-analysis of the improved content
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Auto-improvement failed';
+      setError(errorMessage);
+      console.error('Auto-improvement error:', err);
+    } finally {
+      setIsImproving(false);
+    }
+  }, [apiKey, feedback, editorValue, brandPositioning]);
+
   const hasApiKey = Boolean(apiKey.trim());
   const hasBrandPositioning = Boolean(brandPositioning.trim());
+  const canAutoImprove = hasApiKey && feedback && editorValue.trim() && !isLoading && !isImproving;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -143,6 +172,33 @@ function App() {
               value={editorValue}
               onChange={setEditorValue}
             />
+            <div className="px-6 py-4 border-t bg-gray-50">
+              <button
+                onClick={handleAutoImprove}
+                disabled={!canAutoImprove}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {isImproving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Applying Improvements...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    <span>Auto Improve</span>
+                  </>
+                )}
+              </button>
+              <p className="text-xs text-gray-600 mt-2">
+                {!hasApiKey 
+                  ? 'Add API key to enable auto-improvement'
+                  : !feedback
+                  ? 'Write content and wait for AI analysis to enable auto-improvement'
+                  : 'Apply AI suggestions to automatically enhance your post'
+                }
+              </p>
+            </div>
           </div>
         </div>
 

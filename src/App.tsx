@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MarkdownEditor from './components/MarkdownEditor';
 import FeedbackPanel from './components/FeedbackPanel';
 import ApiKeyModal from './components/ApiKeyModal';
+import BrandPositioningModal from './components/BrandPositioningModal';
 import { PostFeedback } from './types/feedback';
 import { analyzePostWithGemini } from './services/geminiApi';
 import { useDebounce } from './hooks/useDebounce';
-import { PenTool, Settings, Sparkles } from 'lucide-react';
+import { PenTool, Settings, Sparkles, FileText } from 'lucide-react';
 
 function App() {
   const [editorValue, setEditorValue] = useState('');
@@ -15,14 +16,20 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [brandPositioning, setBrandPositioning] = useState('');
+  const [showBrandModal, setShowBrandModal] = useState(false);
   
   const debouncedText = useDebounce(editorValue, 5000);
 
-  // Load API key from localStorage on mount
+  // Load API key and brand positioning from localStorage on mount
   useEffect(() => {
     const savedApiKey = localStorage.getItem('gemini-api-key');
+    const savedBrandPositioning = localStorage.getItem('brand-positioning');
     if (savedApiKey) {
       setApiKey(savedApiKey);
+    }
+    if (savedBrandPositioning) {
+      setBrandPositioning(savedBrandPositioning);
     }
   }, []);
 
@@ -37,7 +44,7 @@ function App() {
       setError(null);
       
       try {
-        const result = await analyzePostWithGemini(debouncedText, apiKey);
+        const result = await analyzePostWithGemini(debouncedText, apiKey, brandPositioning || undefined);
         setFeedback(result);
         setPreviousText(debouncedText);
       } catch (err) {
@@ -50,7 +57,7 @@ function App() {
     };
 
     analyzeContent();
-  }, [debouncedText, apiKey, previousText]);
+  }, [debouncedText, apiKey, brandPositioning, previousText]);
 
   const handleApiKeySave = useCallback((newApiKey: string) => {
     setApiKey(newApiKey);
@@ -63,7 +70,19 @@ function App() {
     }
   }, [editorValue, previousText]);
 
+  const handleBrandPositioningSave = useCallback((content: string) => {
+    setBrandPositioning(content);
+    localStorage.setItem('brand-positioning', content);
+    setError(null);
+    
+    // Re-analyze current content with new brand positioning if we have content
+    if (editorValue.trim() && editorValue !== previousText) {
+      setPreviousText(''); // Force re-analysis
+    }
+  }, [editorValue, previousText]);
+
   const hasApiKey = Boolean(apiKey.trim());
+  const hasBrandPositioning = Boolean(brandPositioning.trim());
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -83,6 +102,19 @@ function App() {
               <span>AI Active</span>
             </div>
           )}
+          {hasBrandPositioning && (
+            <div className="flex items-center gap-2 text-sm text-purple-600">
+              <FileText className="w-4 h-4" />
+              <span>Brand Guide Active</span>
+            </div>
+          )}
+          <button
+            onClick={() => setShowBrandModal(true)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FileText className="w-4 h-4" />
+            <span>{hasBrandPositioning ? 'Update' : 'Add'} Brand Guide</span>
+          </button>
           <button
             onClick={() => setShowApiKeyModal(true)}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
@@ -102,7 +134,7 @@ function App() {
               <h2 className="text-lg font-semibold text-gray-800">Write Your Post</h2>
               <p className="text-sm text-gray-600">
                 {hasApiKey 
-                  ? 'AI analysis happens automatically every 5 seconds after you stop typing'
+                  ? `AI analysis happens automatically every 5 seconds after you stop typing${hasBrandPositioning ? ' with brand alignment' : ''}`
                   : 'Add your API key to enable real-time feedback'
                 }
               </p>
@@ -120,7 +152,7 @@ function App() {
             <div className="px-6 py-4 border-b bg-white">
               <h2 className="text-lg font-semibold text-gray-800">Real-time Feedback</h2>
               <p className="text-sm text-gray-600">
-                Get instant analysis based on LinkedIn best practices
+                Get instant analysis based on LinkedIn best practices{hasBrandPositioning ? ' and your brand positioning' : ''}
               </p>
             </div>
             <FeedbackPanel
@@ -139,6 +171,14 @@ function App() {
         onClose={() => setShowApiKeyModal(false)}
         onSave={handleApiKeySave}
         currentApiKey={apiKey}
+      />
+
+      {/* Brand Positioning Modal */}
+      <BrandPositioningModal
+        isOpen={showBrandModal}
+        onClose={() => setShowBrandModal(false)}
+        onSave={handleBrandPositioningSave}
+        currentContent={brandPositioning}
       />
     </div>
   );

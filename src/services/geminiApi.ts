@@ -4,11 +4,28 @@ const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/mo
 
 export const analyzePostWithGemini = async (
   text: string, 
-  apiKey: string
+  apiKey: string,
+  brandPositioning?: string
 ): Promise<PostFeedback> => {
   if (!text.trim()) {
     throw new Error('No content to analyze');
   }
+
+  const brandContext = brandPositioning ? `
+
+BRAND POSITIONING CONTEXT:
+Use the following brand positioning document to ensure the analysis and suggestions align with the brand's voice, messaging, and positioning strategy:
+
+"""
+${brandPositioning}
+"""
+
+When providing feedback and suggestions, ensure they are consistent with this brand positioning. Consider:
+- Brand voice and tone alignment
+- Messaging consistency with brand pillars
+- Authenticity to the brand personality
+- Adherence to communication guidelines
+` : '';
 
   const prompt = `
 You are an expert LinkedIn content strategist. Analyze the following LinkedIn post and provide detailed feedback based on these criteria:
@@ -18,6 +35,8 @@ You are an expert LinkedIn content strategist. Analyze the following LinkedIn po
 3. Scannability: Is it formatted for mobile reading with proper spacing?
 4. Takeaway/CTA: Is there a clear lesson and call-to-action?
 5. Authenticity: Balance of professional expertise with human authenticity?
+
+${brandContext}
 
 Post to analyze:
 """
@@ -68,7 +87,7 @@ Grade strictly:
 - D (60-69): Needs improvement, limited reach
 - F (0-59): Poor, major revision needed
 
-Focus on actionable, specific feedback that helps improve engagement.
+Focus on actionable, specific feedback that helps improve engagement${brandPositioning ? ' while maintaining brand consistency' : ''}.
 `;
 
   try {

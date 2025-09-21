@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Descendant } from 'slate';
-import SlateEditor from './components/SlateEditor';
+import MarkdownEditor from './components/MarkdownEditor';
 import FeedbackPanel from './components/FeedbackPanel';
 import ApiKeyModal from './components/ApiKeyModal';
 import { PostFeedback } from './types/feedback';
@@ -8,16 +7,8 @@ import { analyzePostWithGemini } from './services/geminiApi';
 import { useDebounce } from './hooks/useDebounce';
 import { PenTool, Settings, Sparkles } from 'lucide-react';
 
-const initialValue: Descendant[] = [
-  {
-    type: 'paragraph',
-    children: [{ text: '' }],
-  },
-];
-
 function App() {
-  const [editorValue, setEditorValue] = useState<Descendant[]>(initialValue);
-  const [currentText, setCurrentText] = useState('');
+  const [editorValue, setEditorValue] = useState('');
   const [previousText, setPreviousText] = useState('');
   const [feedback, setFeedback] = useState<PostFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +16,7 @@ function App() {
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   
-  const debouncedText = useDebounce(currentText, 5000);
+  const debouncedText = useDebounce(editorValue, 5000);
 
   // Load API key from localStorage on mount
   useEffect(() => {
@@ -67,14 +58,10 @@ function App() {
     setError(null);
     
     // Re-analyze current content with new API key if we have content
-    if (currentText.trim() && currentText !== previousText) {
+    if (editorValue.trim() && editorValue !== previousText) {
       setPreviousText(''); // Force re-analysis
     }
-  }, [currentText, previousText]);
-
-  const handleTextChange = useCallback((text: string) => {
-    setCurrentText(text);
-  }, []);
+  }, [editorValue, previousText]);
 
   const hasApiKey = Boolean(apiKey.trim());
 
@@ -120,10 +107,9 @@ function App() {
                 }
               </p>
             </div>
-            <SlateEditor
+            <MarkdownEditor
               value={editorValue}
               onChange={setEditorValue}
-              onTextChange={handleTextChange}
             />
           </div>
         </div>

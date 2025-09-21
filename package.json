@@ -11,13 +11,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "@uiw/react-md-editor": "^4.0.8",
     "lucide-react": "^0.344.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "slate": "^0.118.1",
-    "slate-history": "^0.113.1",
-    "slate-hyperscript": "^0.100.0",
-    "slate-react": "^0.117.4"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

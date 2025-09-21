@@ -125,31 +125,37 @@ function App() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {hasApiKey && (
-            <div className="flex items-center gap-2 text-sm text-green-600">
-              <Sparkles className="w-4 h-4" />
-              <span>AI Active</span>
-            </div>
-          )}
-          {hasBrandPositioning && (
-            <div className="flex items-center gap-2 text-sm text-purple-600">
-              <FileText className="w-4 h-4" />
-              <span>Brand Guide Active</span>
-            </div>
-          )}
           <button
             onClick={() => setShowBrandModal(true)}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              hasBrandPositioning
+                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-300'
+            }`}
           >
-            <FileText className="w-4 h-4" />
-            <span>{hasBrandPositioning ? 'Update' : 'Add'} Brand Guide</span>
+            <FileText className={`w-4 h-4 ${hasBrandPositioning ? 'text-purple-600' : 'text-gray-500'}`} />
+            <span>{hasBrandPositioning ? 'Brand Guide Active' : 'Add Brand Guide'}</span>
+            {hasBrandPositioning && (
+              <div className="w-2 h-2 bg-purple-600 rounded-full" />
+            )}
           </button>
           <button
             onClick={() => setShowApiKeyModal(true)}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              hasApiKey
+                ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-300'
+                : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-300'
+            }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>{hasApiKey ? 'Update' : 'Set'} API Key</span>
+            {hasApiKey ? (
+              <Sparkles className="w-4 h-4 text-green-600" />
+            ) : (
+              <Settings className="w-4 h-4 text-gray-500" />
+            )}
+            <span>{hasApiKey ? 'AI Active' : 'Set API Key'}</span>
+            {hasApiKey && (
+              <div className="w-2 h-2 bg-green-600 rounded-full" />
+            )}
           </button>
         </div>
       </header>

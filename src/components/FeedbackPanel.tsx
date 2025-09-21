@@ -1,0 +1,184 @@
+import React from 'react';
+import { PostFeedback, RubricGrade } from '../types/feedback';
+import { CheckCircle, AlertCircle, XCircle, Clock, Star } from 'lucide-react';
+
+interface FeedbackPanelProps {
+  feedback: PostFeedback | null;
+  isLoading: boolean;
+  hasApiKey: boolean;
+  error: string | null;
+}
+
+const FeedbackPanel: React.FC<FeedbackPanelProps> = ({ 
+  feedback, 
+  isLoading, 
+  hasApiKey, 
+  error 
+}) => {
+  if (!hasApiKey) {
+    return (
+      <div className="h-full flex items-center justify-center text-center p-6">
+        <div className="max-w-sm">
+          <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">API Key Required</h3>
+          <p className="text-gray-600">Please enter your Gemini API key to start receiving real-time feedback on your writing.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex items-center justify-center text-center p-6">
+        <div className="max-w-sm">
+          <XCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Analysis Error</h3>
+          <p className="text-gray-600 text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center text-center p-6">
+        <div className="max-w-sm">
+          <Clock className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Analyzing Your Post</h3>
+          <p className="text-gray-600">AI is reviewing your content for engagement potential...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!feedback) {
+    return (
+      <div className="h-full flex items-center justify-center text-center p-6">
+        <div className="max-w-sm">
+          <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Start Writing</h3>
+          <p className="text-gray-600">Begin typing your LinkedIn post to receive real-time feedback and suggestions.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-y-auto">
+      <div className="p-6">
+        {/* Overall Score */}
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-bold text-gray-800">Overall Score</h3>
+            <div className="flex items-center gap-2">
+              <span className={`text-2xl font-bold ${getScoreColor(feedback.overall_score)}`}>
+                {feedback.overall_score}
+              </span>
+              <span className="text-sm text-gray-600">
+                ({feedback.overall_points}/100)
+              </span>
+            </div>
+          </div>
+          {feedback.general_feedback.map((comment, index) => (
+            <p key={index} className="text-gray-700 text-sm mb-1">{comment}</p>
+          ))}
+        </div>
+
+        {/* Detailed Rubric */}
+        <div className="space-y-4">
+          <RubricSection 
+            title="Hook Quality" 
+            description="First line engagement power"
+            grade={feedback.hook_quality} 
+          />
+          <RubricSection 
+            title="Story Structure" 
+            description="Narrative flow and impact"
+            grade={feedback.story_structure} 
+          />
+          <RubricSection 
+            title="Scannability" 
+            description="Mobile-friendly formatting"
+            grade={feedback.scannability} 
+          />
+          <RubricSection 
+            title="Takeaway & CTA" 
+            description="Clear value and engagement"
+            grade={feedback.takeaway_cta} 
+          />
+          <RubricSection 
+            title="Authenticity" 
+            description="Professional yet human balance"
+            grade={feedback.authenticity} 
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RubricSection: React.FC<{
+  title: string;
+  description: string;
+  grade: RubricGrade;
+}> = ({ title, description, grade }) => {
+  return (
+    <div className="border rounded-lg p-4 bg-white shadow-sm">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h4 className="font-semibold text-gray-800">{title}</h4>
+          <p className="text-xs text-gray-500">{description}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {getScoreIcon(grade.score)}
+          <span className={`text-lg font-bold ${getScoreColor(grade.score)}`}>
+            {grade.score}
+          </span>
+          <span className="text-sm text-gray-600">({grade.points}/100)</span>
+        </div>
+      </div>
+      
+      {grade.comments.length > 0 && (
+        <div className="mb-3">
+          <h5 className="text-sm font-medium text-gray-700 mb-1">Comments:</h5>
+          {grade.comments.map((comment, index) => (
+            <p key={index} className="text-sm text-gray-600 mb-1">• {comment}</p>
+          ))}
+        </div>
+      )}
+      
+      {grade.suggestions.length > 0 && (
+        <div>
+          <h5 className="text-sm font-medium text-blue-700 mb-1">Suggestions:</h5>
+          {grade.suggestions.map((suggestion, index) => (
+            <p key={index} className="text-sm text-blue-600 mb-1">💡 {suggestion}</p>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const getScoreColor = (score: string): string => {
+  switch (score) {
+    case 'A': return 'text-green-600';
+    case 'B': return 'text-blue-600';
+    case 'C': return 'text-yellow-600';
+    case 'D': return 'text-orange-600';
+    case 'F': return 'text-red-600';
+    default: return 'text-gray-600';
+  }
+};
+
+const getScoreIcon = (score: string) => {
+  switch (score) {
+    case 'A': return <CheckCircle className="w-5 h-5 text-green-600" />;
+    case 'B': return <CheckCircle className="w-5 h-5 text-blue-600" />;
+    case 'C': return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+    case 'D': return <AlertCircle className="w-5 h-5 text-orange-600" />;
+    case 'F': return <XCircle className="w-5 h-5 text-red-600" />;
+    default: return null;
+  }
+};
+
+export default FeedbackPanel;

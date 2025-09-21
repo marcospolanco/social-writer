@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Key, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Key, Eye, EyeOff, ExternalLink, X } from 'lucide-react';
 
 interface ApiKeyModalProps {
   isOpen: boolean;
@@ -39,9 +39,17 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     >
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div className="p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Key className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-bold text-gray-800">Gemini API Key</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Key className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold text-gray-800">Gemini API Key</h2>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
           
           <p className="text-gray-600 mb-4">

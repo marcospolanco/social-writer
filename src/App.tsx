@@ -7,6 +7,7 @@ import NewsjackingDashboard from './components/NewsjackingDashboard';
 import { PostFeedback } from './types/feedback';
 import { useConvexNewsjacking } from './services/convexNewsjacking';
 import { useDebounce } from './hooks/useDebounce';
+import { analyzePostWithGemini, improvePostWithGemini } from './services/geminiApi';
 import { PenTool, Settings, Sparkles, FileText, Zap, LayoutDashboard } from 'lucide-react';
 
 function App() {
@@ -37,13 +38,22 @@ function App() {
   // Analyze content when debounced text changes
   useEffect(() => {
     const analyzeContent = async () => {
+      console.log('analyzeContent called:', {
+        hasApiKey: !!apiKey,
+        debouncedTextLength: debouncedText.length,
+        debouncedTextTrimmed: debouncedText.trim().length,
+        isSameAsPrevious: debouncedText === previousText,
+        previousTextLength: previousText.length
+      });
+
       if (!apiKey || !debouncedText.trim() || debouncedText === previousText) {
+        console.log('Skipping analysis - conditions not met');
         return;
       }
 
       setIsLoading(true);
       setError(null);
-      
+
       try {
         const result = await analyzePostWithGemini(debouncedText, apiKey, brandGuide?.content || undefined);
         setFeedback(result);
@@ -131,7 +141,7 @@ function App() {
             <PenTool className="w-6 h-6 text-blue-600" />
             <div>
               <h1 className="text-xl font-bold text-gray-800">Social Writer</h1>
-              <p className="text-sm text-gray-600">AI-powered content creation and newsjacking</p>
+              <p className="text-sm text-gray-600">AI-powered newsjacking and content creation</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -181,9 +191,10 @@ function App() {
             }`}
           >
             <LayoutDashboard className="w-4 h-4" />
-            <span>Newsjacking Dashboard</span>
+            <span>Research</span>
           </button>
           <button
+            data-tab="writer"
             onClick={() => setActiveTab('writer')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
               activeTab === 'writer'
@@ -192,7 +203,7 @@ function App() {
             }`}
           >
             <PenTool className="w-4 h-4" />
-            <span>LinkedIn Writer</span>
+            <span>Write</span>
           </button>
         </div>
       </header>
@@ -200,7 +211,14 @@ function App() {
       {/* Main Content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'dashboard' ? (
-          <NewsjackingDashboard />
+          <NewsjackingDashboard
+            onSetEditorContent={setEditorValue}
+            onClearFeedback={() => {
+              setFeedback(null);
+              setError(null);
+              setPreviousText('');
+            }}
+          />
         ) : (
           <div className="flex h-full">
             {/* Editor Panel */}

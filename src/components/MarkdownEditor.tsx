@@ -29,7 +29,6 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
           height={400}
           preview="edit"
           hideToolbar={false}
-          toolbarHeight={60}
           textareaProps={{
             placeholder: 'Start writing your LinkedIn post here... Use markdown formatting like **bold** and *italic*. The AI will analyze your content in real-time and provide feedback.',
             style: {

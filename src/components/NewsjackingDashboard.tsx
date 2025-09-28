@@ -3,7 +3,12 @@ import { Search, RefreshCw, TrendingUp, Filter, CheckCircle, AlertCircle, FileTe
 import OpportunityCard from './OpportunityCard';
 import { useConvexNewsjacking, useArticleGeneration } from '../services/convexNewsjacking';
 
-const NewsjackingDashboard: React.FC = () => {
+interface NewsjackingDashboardProps {
+  onSetEditorContent?: (content: string) => void;
+  onClearFeedback?: () => void;
+}
+
+const NewsjackingDashboard: React.FC<NewsjackingDashboardProps> = ({ onSetEditorContent, onClearFeedback }) => {
   const {
     brandGuide,
     opportunities,
@@ -90,35 +95,19 @@ const NewsjackingDashboard: React.FC = () => {
         writerTab.click();
       }
 
-      // Insert the AI brief into the editor
-      const setEditorContent = (window as any).setEditorContent ||
-        ((content: string) => {
-          const editor = document.querySelector('.ProseMirror') as HTMLElement;
-          if (editor) {
-            editor.textContent = content;
-          }
-        });
-
       // Create markdown content from the AI brief
       const markdownContent = `# ${opportunity.aiBrief.title}
 
-${opportunity.aiBrief.brief}
+${opportunity.aiBrief.brief}`;
 
----
+      // Clear feedback and set the editor content
+      if (onClearFeedback) {
+        onClearFeedback();
+      }
 
-## Original Article
-**Title:** ${opportunity.title}
-**Source:** ${opportunity.source}
-**URL:** ${opportunity.url}
-
-## Summary
-${opportunity.summary}
-
----
-
-*Generated using Social Writer with ${opportunity.aiBrief.emotion} emotion targeting*`;
-
-      setEditorContent(markdownContent);
+      if (onSetEditorContent) {
+        setTimeout(() => onSetEditorContent(markdownContent), 100); // Small delay to ensure tab switch is complete
+      }
     } catch (error) {
       console.error('Error starting writing:', error);
       alert('Failed to start writing. Please try again.');
@@ -267,18 +256,7 @@ ${opportunity.summary}
         {/* Filters */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-600" />
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value as any)}
-              className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="all">All Categories</option>
-              <option value="industry">Industry</option>
-              <option value="values">Values</option>
-              <option value="products">Products</option>
-              <option value="competitors">Competitors</option>
-            </select>
+            {/* Category filter hidden */}
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input

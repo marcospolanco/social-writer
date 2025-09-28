@@ -3,13 +3,19 @@ import { PostFeedback } from '../types/feedback';
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export const analyzePostWithGemini = async (
-  text: string, 
+  text: string,
   apiKey: string,
   brandPositioning?: string
 ): Promise<PostFeedback> => {
   if (!text.trim()) {
     throw new Error('No content to analyze');
   }
+
+  console.log('Analyzing post with Gemini:', {
+    textLength: text.length,
+    hasApiKey: !!apiKey,
+    hasBrandGuide: !!brandPositioning
+  });
 
   const brandContext = brandPositioning ? `
 
@@ -110,7 +116,7 @@ Focus on actionable, specific feedback that helps improve engagement${brandPosit
           temperature: 0.7,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 16384,
         }
       })
     });
@@ -124,9 +130,12 @@ Focus on actionable, specific feedback that helps improve engagement${brandPosit
     }
 
     const data = await response.json();
+    console.log('Gemini API Response:', JSON.stringify(data, null, 2));
+
     const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!generatedText) {
+      console.error('Empty response from Gemini API. Full response:', data);
       throw new Error('No response generated from Gemini API');
     }
 
@@ -235,7 +244,7 @@ Return ONLY the improved post content in markdown format, without any additional
           temperature: 0.8,
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 16384,
         }
       })
     });

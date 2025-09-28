@@ -1,0 +1,41 @@
+graph TD
+    A[Upload Brand Guide] --> B[Extract Keywords]
+    A --> C[Vectorize Brand Content]
+
+    B --> D[Keyword Database]
+    C --> E[Vector Embeddings]
+
+    F[Tavily Document Search] --> G[Search Trending Articles]
+    G --> H[Retrieve Relevant Documents]
+
+    D --> I[Cosine Similarity Matching]
+    E --> I
+    H --> I
+
+    I --> J[Generate Content Ideas]
+    J --> K[Create AI Briefs]
+
+    K --> L[Evaluate Against Brand Guide]
+    L --> P[Paste to Markdown Editor]
+
+
+    P --> Q[Real-time AI Analysis]
+    Q --> R[Content Feedback]
+    R --> S[Auto-Improve Suggestions]
+    S --> T[Enhanced Content]
+
+    U --> Q
+	R --> U[Manual Edits]
+
+    style A fill:#e1f5fe
+    style F fill:#f3e5f5
+    style P fill:#e8f5e8
+    style T fill:#fff3e0
+
+    classDef process fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef decision fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef output fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
+
+    class B,C,I,J,K,L,Q,S process
+    class M decision
+    class D,E,G,H,N,O,P,R,T output

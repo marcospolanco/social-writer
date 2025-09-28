@@ -1,39 +1,56 @@
 import React, { useState, useRef } from 'react';
-import { FileText, Upload, X, Eye, EyeOff } from 'lucide-react';
+import { FileText, Upload, X } from 'lucide-react';
 
 interface BrandPositioningModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (content: string) => void;
-  currentContent: string;
+  onUpload: (file: File) => Promise<void>;
+  isUploading: boolean;
 }
 
-const BrandPositioningModal: React.FC<BrandPositioningModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  currentContent 
+const BrandPositioningModal: React.FC<BrandPositioningModalProps> = ({
+  isOpen,
+  onClose,
+  onUpload,
+  isUploading
 }) => {
-  const [content, setContent] = useState(currentContent);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleSave = () => {
-    onSave(content.trim());
-    onClose();
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setContent(text);
-      };
-      reader.readAsText(file);
+      setSelectedFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      // Save to localStorage first (wait for it to complete)
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          localStorage.setItem('brand_guide', content);
+          resolve(content);
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsText(selectedFile);
+      });
+
+      // Upload to Convex
+      await onUpload(selectedFile);
+
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
     }
   };
 
@@ -44,7 +61,7 @@ const BrandPositioningModal: React.FC<BrandPositioningModalProps> = ({
   };
 
   const handleClear = () => {
-    setContent('');
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -61,8 +78,8 @@ const BrandPositioningModal: React.FC<BrandPositioningModalProps> = ({
             <div className="flex items-center gap-3">
               <FileText className="w-6 h-6 text-purple-600" />
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Brand Positioning Document</h2>
-                <p className="text-sm text-gray-600">Upload or paste your brand guidelines to ensure consistent messaging</p>
+                <h2 className="text-xl font-bold text-gray-800">Brand Guide</h2>
+                <p className="text-sm text-gray-600">Upload your brand guide file to ensure consistent messaging</p>
               </div>
             </div>
             <button
@@ -74,95 +91,102 @@ const BrandPositioningModal: React.FC<BrandPositioningModalProps> = ({
           </div>
         </div>
         
-        <div className="p-6 flex-1 overflow-y-auto">
-          <div className="mb-4">
-            <div className="flex items-center gap-3 mb-3">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-              >
-                <Upload className="w-4 h-4" />
-                Upload File
-              </button>
-              {content && (
-                <button
-                  onClick={handleClear}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                  Clear
-                </button>
-              )}
-              <span className="text-sm text-gray-500">Supports: .txt, .md, .doc, .pdf (text only)</span>
-            </div>
-            
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".txt,.md,.doc,.docx,.pdf"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Brand Positioning Content
-            </label>
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              <div className="bg-gray-50 px-3 py-2 border-b flex items-center justify-between">
-                <span className="text-sm text-gray-600">
-                  {content.length} characters
-                </span>
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-sm text-gray-600 hover:text-gray-800 flex items-center gap-1"
-                >
-                  {isExpanded ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  {isExpanded ? 'Collapse' : 'Expand'}
-                </button>
+        <div className="p-6 flex-1">
+          <div className="text-center py-8">
+            <div className="mb-6">
+              <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-purple-600" />
               </div>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Paste or type your brand positioning document here...
-
-Include details like:
-• Brand voice and tone
-• Key messaging pillars
-• Target audience
-• Value propositions
-• Brand personality traits
-• Communication guidelines"
-                className={`w-full px-3 py-2 border-none outline-none resize-none transition-all ${
-                  isExpanded ? 'h-80' : 'h-32'
-                }`}
-              />
-            </div>
-          </div>
-
-          {content && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <p className="text-sm text-purple-800">
-                <strong>How it works:</strong> Your brand positioning will be included in the AI analysis 
-                to ensure your LinkedIn posts align with your brand voice, messaging, and positioning strategy.
+              <h3 className="text-lg font-medium text-gray-800 mb-2">
+                Upload Your Brand Guide
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Upload your brand guide file to ensure consistent messaging across all content
               </p>
             </div>
-          )}
+
+            <div className="space-y-4">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-colors w-full"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    <span>Select File</span>
+                  </>
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".txt,.md,.doc,.docx,.pdf"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isUploading}
+              />
+
+              {selectedFile && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <span className="text-sm font-medium text-gray-800">{selectedFile.name}</span>
+                    </div>
+                    <button
+                      onClick={handleClear}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">
+                      Size: {(selectedFile.size / 1024).toFixed(1)} KB
+                    </span>
+                    <span className="text-xs text-gray-600">
+                      Type: {selectedFile.type || 'Unknown'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-xs text-gray-500">
+                Supports: TXT, MD, DOC, DOCX, PDF files
+              </p>
+            </div>
+
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>How it works:</strong> Your brand guide will be processed to extract
+                search queries and create embeddings for automated newsjacking. The content
+                will also be used to ensure AI-generated content aligns with your brand voice.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="p-6 border-t bg-gray-50 flex gap-3">
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={isUploading}
           >
             Cancel
           </button>
           <button
-            onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            onClick={handleFileUpload}
+            disabled={!selectedFile || isUploading}
+            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed transition-colors"
           >
-            Save Brand Positioning
+            {isUploading ? 'Uploading...' : 'Upload Brand Guide'}
           </button>
         </div>
       </div>

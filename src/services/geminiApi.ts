@@ -1,6 +1,6 @@
 import { PostFeedback } from '../types/feedback';
 
-const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 export const analyzePostWithGemini = async (
   text: string, 
